@@ -17,6 +17,6 @@ public class JsonDateSerialiser extends JsonSerializer<DateTime> {
 
     @Override
     public void serialize(DateTime dateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
-        jsonGenerator.writeString(dateTime.getDayOfMonth()+"-"+dateTime.getMonthOfYear()+"-"+dateTime.getYear());
+        jsonGenerator.writeString(dateTime.getYear()+"-"+dateTime.getMonthOfYear()+"-"+dateTime.getDayOfMonth());
     }
 }

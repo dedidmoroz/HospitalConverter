@@ -1,10 +1,10 @@
 package com.diagnosisproject.io;
 
-import com.diagnosisproject.services.PatientService;
-import com.diagnosisproject.services.PatientServiceImpl;
 import com.diagnosisproject.entities.Diagnosis;
 import com.diagnosisproject.entities.Hospital;
 import com.diagnosisproject.entities.Patient;
+import com.diagnosisproject.services.PatientService;
+import com.diagnosisproject.services.PatientServiceImpl;
 import java8.util.Iterators;
 import org.joda.time.format.DateTimeFormat;
 
@@ -22,15 +22,13 @@ import java.util.regex.Pattern;
  * Created by pkuz'tc on 3/29/2016.
  */
 public class FileIO implements ReadWriteIO<Hospital> {
-    public static final String patientPattern = "([\\w]+)\\s([\\w]+)\\s\\(([\\w]+)\\)\\s([\\d]{4}-[\\d]{2}-[\\d]{2})";
-    //Pavel Lol (Chernivci) 2014-11-10{2015-12-11:Bad}
-    public static final String diagnosisPattern = "\\{([\\w\\W]+)\\5*\\}";
+    public static final String patientPattern = "([\\w]+)\\s([\\w]+)\\s\\(([\\w]+)\\)\\s([\\d]{4}-[\\d]{2}-[\\d]{2})\\{([\\w\\W]+)\\5*\\}";
     public static final String diagnosisValuePattern = "(([\\d]{4}-[\\d]{2}-[\\d]{2}):([\\w]+)),";
     public final List<Diagnosis> diagnosesList = new ArrayList<>();
     private final StringBuffer writeBuffer = new StringBuffer("");
     private final org.joda.time.format.DateTimeFormatter format = DateTimeFormat.forPattern("yyyy-MM-dd");
     private final PatientService service = new PatientServiceImpl();
-    private final Pattern pattern = Pattern.compile(patientPattern + diagnosisPattern, Pattern.CASE_INSENSITIVE);
+    private final Pattern pattern = Pattern.compile(patientPattern , Pattern.CASE_INSENSITIVE);
     private Matcher matcher;
     private Patient newPatient = null;
     private Diagnosis diagnosis = null;
@@ -64,76 +62,55 @@ public class FileIO implements ReadWriteIO<Hospital> {
             e.printStackTrace();
         }
     }
-
     @Override
     public Hospital read(String filePath) {
-//
-//
-//        Hospital hospital = new Hospital();
-//        hospital.setId(1);
-//
-//        try {
-//            List<String> result = Files.readAllLines(new File(filePath).toPath());
-//
-//            result.stream().forEach(System.out::println);
-//
-//            Iterator<String> resultIterator = result.iterator();
-//            if (resultIterator.hasNext()) {
-//                hospital.setTitle(resultIterator.next());
-//            }
-//
-//            String firstP = resultIterator.next();
-//           this.matcher = pattern.matcher(firstP);
-//            System.out.println(pattern.pattern());
-//
-//            if(matcher.matches()){
-//                System.out.println(true);
-//            }
-//
-//              String item = null;
-//            String patient = null;
-//            String diagnoses = null;
-//
-//            while (resultIterator.hasNext()) {
-//                item = resultIterator.next();
-//                patient = item.substring(0, item.indexOf("{"));
-//                diagnoses = item.substring(patient.length() + 1, item.length() - 1);
-//
-//                String[] patientData = patient.split(" "); //patient part starts
-//                Patient newPatient = new Patient();
-//                newPatient.setId(System.currentTimeMillis());
-//                newPatient.setName(patientData[0]);
-//                newPatient.setSurName(patientData[1]);
-//                newPatient.setAddress(patientData[2]);
-//                newPatient.setBirthDay(format.parseDateTime(patientData[3]));
-//
-//                String[] diagnoesesArray = diagnoses.split(","); // split diagnoses row and then build Diagnosis object
-//
-//                diagnosesList.clear();
-//                for(String i:diagnoesesArray){
-//                    String [] diagnosesData = i.split(":");
-//                    Diagnosis newDiagnosis  = new Diagnosis();
-//                    newDiagnosis.setId(System.currentTimeMillis());
-//                    newDiagnosis.setDate(format.parseDateTime(diagnosesData[0]));
-//                    newDiagnosis.setSummary(diagnosesData[1]);
-//                    diagnosesList.add(newDiagnosis);
-//                };
-//                newPatient.setDiagnosesList(diagnosesList);
-//                hospital.addPatient(newPatient);
-//            }
-
-
-//        } catch (IOException e) {
-//             TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//        return hospital;
+        Hospital hospital = new Hospital();
+        hospital.setId(1);
         try {
-            return readWithPattern(filePath);
+            List<String> result = Files.readAllLines(new File(filePath).toPath());
+            result.stream().forEach(System.out::println);
+            Iterator<String> resultIterator = result.iterator();
+            if (resultIterator.hasNext()) {
+                hospital.setTitle(resultIterator.next());
+            }
+            String firstP = resultIterator.next();
+
+
+            String item = null;
+            String patient = null;
+            String diagnoses = null;
+            while (resultIterator.hasNext()) {
+                item = resultIterator.next();
+                patient = item.substring(0, item.indexOf("{"));
+                diagnoses = item.substring(patient.length() + 1, item.length() - 1);
+                String[] patientData = patient.split(" "); //patient part starts
+                Patient newPatient = new Patient();
+                newPatient.setId(System.currentTimeMillis());
+                newPatient.setName(patientData[0]);
+                newPatient.setSurName(patientData[1]);
+                newPatient.setAddress(patientData[2]);
+                newPatient.setBirthDay(format.parseDateTime(patientData[3]));
+
+                String[] diagnoesesArray = diagnoses.split(","); // split diagnoses row and then build Diagnosis object
+
+                diagnosesList.clear();
+                for (String i : diagnoesesArray) {
+                    String[] diagnosesData = i.split(":");
+                    Diagnosis newDiagnosis = new Diagnosis();
+                    newDiagnosis.setId(System.currentTimeMillis());
+                    newDiagnosis.setDate(format.parseDateTime(diagnosesData[0]));
+                    newDiagnosis.setSummary(diagnosesData[1]);
+                    diagnosesList.add(newDiagnosis);
+                }
+                ;
+                newPatient.setDiagnosesList(diagnosesList);
+                hospital.addPatient(newPatient);
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
+        return hospital;
+
     }
 
     @Override
@@ -174,7 +151,6 @@ public class FileIO implements ReadWriteIO<Hospital> {
                 }
                 newHospital.addPatient(newPatient);
             }
-
         }
 
 

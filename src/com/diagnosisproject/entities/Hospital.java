@@ -1,5 +1,10 @@
 package com.diagnosisproject.entities;
 
+import com.diagnosisproject.adapters.JsonDeserializer;
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonSubTypes;
+import org.codehaus.jackson.map.annotate.JsonDeserialize;
+
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +15,7 @@ import java.util.List;
  */
 
 @XmlRootElement(name = "hospital")
+@JsonDeserialize(using = JsonDeserializer.class)
 @XmlType(propOrder = {"id", "title", "patients"})
 public class Hospital {
 

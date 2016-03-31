@@ -46,7 +46,7 @@ public class Application {
         Application.removeFileIfExist(textFilename);
         Patient patientPavel = Patient.create()
                 .setId(Long.valueOf("1"))
-                .setName("Pavel")
+                .setName("Pavel21312")
                 .setSurName("Lol")
                 .setAddress("Chernivci")
                 .setBirthDay(parser.parseDateTime(date1))
@@ -82,13 +82,13 @@ public class Application {
         context.write(hospital,jsonFilename);
         hospital = context.read(jsonFilename);
 
-        context.setStrategy(new FileIO());
-        context.write(hospital, textFilename);
-        hospital = context.readWithPattern(textFilename);
-
-        context.setStrategy(new XmlIO<Hospital>());
-        context.write(hospital, xmlFilename);
-        hospital = context.read(xmlFilename);
+//        context.setStrategy(new FileIO());
+//        context.write(hospital, textFilename);
+//        hospital = context.readWithPattern(textFilename);
+//
+//        context.setStrategy(new XmlIO<Hospital>());
+//        context.write(hospital, xmlFilename);
+//        hospital = context.read(xmlFilename);
 
     }
 };
