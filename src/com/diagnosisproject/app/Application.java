@@ -79,16 +79,17 @@ public class Application {
 
         IOContext<Hospital> context = new IOContext<Hospital>(new JsonIO());
 
-        context.write(hospital,jsonFilename);
+//        context.write(hospital,jsonFilename);
         hospital = context.read(jsonFilename);
 
-//        context.setStrategy(new FileIO());
-//        context.write(hospital, textFilename);
-//        hospital = context.readWithPattern(textFilename);
-//
-//        context.setStrategy(new XmlIO<Hospital>());
-//        context.write(hospital, xmlFilename);
-//        hospital = context.read(xmlFilename);
+        context.setStrategy(new FileIO());
+        context.write(hospital, textFilename);
+        hospital = context.readWithPattern(textFilename);
+
+        context.setStrategy(new XmlIO<Hospital>());
+        context.write(hospital, xmlFilename);
+        hospital = context.read(xmlFilename);
+
 
     }
 };

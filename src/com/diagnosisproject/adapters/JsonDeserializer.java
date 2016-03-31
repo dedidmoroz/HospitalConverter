@@ -32,7 +32,7 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
 
     private Pattern patternMatching = null;
     private Matcher matcher = null;
-    private String resultValidation = "Error in:\n";
+
     /**
      * <p>Build new Hospital instance</p>
      *
@@ -43,14 +43,18 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
     private Patient newPatient = null;
     private Diagnosis newDiagnosis = null;
 
+    private Boolean shutDown = false;
+
     @Override
     public Hospital deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         JsonNode hospitalNode = jsonParser.getCodec().readTree(jsonParser);
         this.validateJSON(hospitalNode);
-
-
-        System.out.println(resultValidation);
+        if(shutDown) {
+            System.exit(1);
+        }
         return buildHospital(hospitalNode);
+
+
     }
 
     public Hospital buildHospital(JsonNode hospitalNode) {
@@ -120,12 +124,17 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         matcher = patternMatching.matcher(value);
 
         if (!matcher.matches()) {
-            wrapError(key, value);
+            try {
+                throw new JSONFieldInvalidException(wrapError(key, value));
+            } catch (JSONFieldInvalidException e) {
+                e.printStackTrace();
+                this.shutDown = true;
+            }
         }
     }
 
-    public void wrapError(String key, String value) {
-        this.resultValidation += "\tError " + key + ":" + value + "!\n";
+    public String wrapError(String key, String value) {
+        return value +" doesn't match pattern for " + key + ".\n";
     }
 
     public String getPatternForNode(String key) {
@@ -152,5 +161,11 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         }
     }
 
+    class JSONFieldInvalidException extends Exception{
+        public JSONFieldInvalidException(String message) {
+            super(message);
+        }
+
+    }
 
 }
