@@ -28,7 +28,7 @@ public class FileIO implements ReadWriteIO<Hospital> {
     private final StringBuffer writeBuffer = new StringBuffer("");
     private final org.joda.time.format.DateTimeFormatter format = DateTimeFormat.forPattern("yyyy-MM-dd");
     private final PatientService service = new PatientServiceImpl();
-    private final Pattern pattern = Pattern.compile(patientPattern , Pattern.CASE_INSENSITIVE);
+    private final Pattern pattern = Pattern.compile(patientPattern, Pattern.CASE_INSENSITIVE);
     private Matcher matcher;
     private Patient newPatient = null;
     private Diagnosis diagnosis = null;
@@ -62,6 +62,7 @@ public class FileIO implements ReadWriteIO<Hospital> {
             e.printStackTrace();
         }
     }
+
     @Override
     public Hospital read(String filePath) {
         Hospital hospital = new Hospital();

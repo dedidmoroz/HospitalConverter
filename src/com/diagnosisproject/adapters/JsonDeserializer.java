@@ -94,20 +94,20 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         Iterators.forEachRemaining(hospitalNode.getFields(), (json) -> {
 
             if (!json.getValue().isContainerNode()) {
-                this.validate(json.getKey(), json.getValue().asText(), getPatternForNode(json.getKey()));
+                this.validate("hospital",json.getKey(), json.getValue().asText(), getPatternForNode(json.getKey()));
             } else {
 
                 Iterators.forEachRemaining(json.getValue().iterator(), (jsonArray) -> {
                     Iterators.forEachRemaining(jsonArray.getFields(), (patientNode) -> {
 
                         if (!patientNode.getValue().isContainerNode()) {
-                            this.validate(patientNode.getKey(), patientNode.getValue().asText(), getPatternForNode(patientNode.getKey()));
+                            this.validate("patient",patientNode.getKey(), patientNode.getValue().asText(), getPatternForNode(patientNode.getKey()));
                         } else {
 
                             Iterators.forEachRemaining(patientNode.getValue().iterator(), (patientArray) -> {
                                 Iterators.forEachRemaining(patientArray.getFields(), (diagnosisNode) -> {
                                     if (!diagnosisNode.getValue().isContainerNode()) {
-                                        this.validate(diagnosisNode.getKey(), diagnosisNode.getValue().asText(), getPatternForNode(diagnosisNode.getKey()));
+                                        this.validate("diagnosis",diagnosisNode.getKey(), diagnosisNode.getValue().asText(), getPatternForNode(diagnosisNode.getKey()));
                                     }
                                 });
                             });
@@ -119,13 +119,23 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
 
     }
 
-    public void validate(String key, String value, String pattern) {
+    /**
+     * <p>
+     *     validate passed value: match it with pattern.
+     *     if incorrect, throw exception
+     * </p>
+     * @param key is a key of validated field
+     * @param value is validated value
+     * @param pattern is uses by validator for matching with value
+     * @exception JSONFieldInvalidException
+     * */
+    public void validate(String node,String key, String value, String pattern) {
         patternMatching = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         matcher = patternMatching.matcher(value);
 
         if (!matcher.matches()) {
             try {
-                throw new JSONFieldInvalidException(wrapError(key, value));
+                throw new JSONFieldInvalidException(wrapError(node,key, value));
             } catch (JSONFieldInvalidException e) {
                 e.printStackTrace();
                 this.shutDown = true;
@@ -133,8 +143,8 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         }
     }
 
-    public String wrapError(String key, String value) {
-        return value +" doesn't match pattern for " + key + ".\n";
+    public String wrapError(String node,String key, String value) {
+        return "type mismatch or incorrect input in value of "+node+" {"+  key + ":"+value+"}.\n";
     }
 
     public String getPatternForNode(String key) {
