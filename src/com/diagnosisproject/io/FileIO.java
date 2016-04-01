@@ -5,6 +5,7 @@ import com.diagnosisproject.entities.Hospital;
 import com.diagnosisproject.entities.Patient;
 import com.diagnosisproject.services.PatientService;
 import com.diagnosisproject.services.PatientServiceImpl;
+import com.diagnosisproject.utils.Utils;
 import java8.util.Iterators;
 import org.joda.time.format.DateTimeFormat;
 
@@ -22,13 +23,14 @@ import java.util.regex.Pattern;
  * Created by pkuz'tc on 3/29/2016.
  */
 public class FileIO implements ReadWriteIO<Hospital> {
-    public static final String patientPattern = "([\\w]+)\\s([\\w]+)\\s\\(([\\w]+)\\)\\s([\\d]{4}-[\\d]{2}-[\\d]{2})\\{([\\w\\W]+)\\5*\\}";
-    public static final String diagnosisValuePattern = "(([\\d]{4}-[\\d]{2}-[\\d]{2}):([\\w]+)),";
-    public final List<Diagnosis> diagnosesList = new ArrayList<>();
+    public static final String PATIENT_PATTERN = "([\\w]+)\\s([\\w]+)\\s\\(([\\w]+)\\)\\s([\\d]{4}-[\\d]{2}-[\\d]{2})\\{([\\w\\W]+)\\5*\\}";
+    public static final String DIAGNOSIS_VALUE_PATTERN = "(([\\d]{4}-[\\d]{2}-[\\d]{2}):([\\w]+)),";
+
+    private final List<Diagnosis> diagnosesList = new ArrayList<>();
     private final StringBuffer writeBuffer = new StringBuffer("");
     private final org.joda.time.format.DateTimeFormatter format = DateTimeFormat.forPattern("yyyy-MM-dd");
-    private final PatientService service = new PatientServiceImpl();
-    private final Pattern pattern = Pattern.compile(patientPattern, Pattern.CASE_INSENSITIVE);
+    private final Pattern pattern = Pattern.compile(PATIENT_PATTERN, Pattern.CASE_INSENSITIVE);
+
     private Matcher matcher;
     private Patient newPatient = null;
     private Diagnosis diagnosis = null;
@@ -114,6 +116,7 @@ public class FileIO implements ReadWriteIO<Hospital> {
 
     }
 
+
     @Override
     public Hospital readWithPattern(String filePath) throws IOException {
         Hospital newHospital = new Hospital();
@@ -140,7 +143,7 @@ public class FileIO implements ReadWriteIO<Hospital> {
                         .build();
                 other = matcher.group(5);
 
-                matcher = Pattern.compile(diagnosisValuePattern).matcher(other);
+                matcher = Pattern.compile(DIAGNOSIS_VALUE_PATTERN).matcher(other);
 
                 while (matcher.find()) {
                     diagnosis = Diagnosis.create()
@@ -148,7 +151,7 @@ public class FileIO implements ReadWriteIO<Hospital> {
                             .setDate(format.parseDateTime(matcher.group(2)))
                             .setSummary(matcher.group(3))
                             .build();
-                    service.addDiagnosis(newPatient, diagnosis);
+                    Utils.PATIENT_SERVICE.addDiagnosis(newPatient, diagnosis);
                 }
                 newHospital.addPatient(newPatient);
             }
@@ -156,5 +159,11 @@ public class FileIO implements ReadWriteIO<Hospital> {
 
 
         return newHospital;
+    }
+
+    class FileInvalidValueException extends Exception{
+        public FileInvalidValueException(String message) {
+            super(message);
+        }
     }
 }

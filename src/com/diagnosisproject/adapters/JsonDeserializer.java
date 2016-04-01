@@ -3,32 +3,24 @@ package com.diagnosisproject.adapters;
 import com.diagnosisproject.entities.Diagnosis;
 import com.diagnosisproject.entities.Hospital;
 import com.diagnosisproject.entities.Patient;
-import com.diagnosisproject.services.PatientService;
-import com.diagnosisproject.services.PatientServiceImpl;
+import com.diagnosisproject.utils.Utils;
 import java8.util.Iterators;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationContext;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import org.codehaus.jackson.map.JsonMappingException;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by deplague on 3/31/16.
+ *
+ * @version 1.0
  */
 public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<Hospital> {
-    private static final String format = "yyyy-MM-dd";
-    private static final DateTimeFormatter parser = DateTimeFormat.forPattern(format);
-    private static final PatientService patientService = new PatientServiceImpl();
-    private static final String idPattern = "[\\d]+";
-    private static final String nameSurnamePattern = "[a-zA-Z]+";
-    private static final String summaryPattern = "[\\w]+";
-    private static final String addressPattern = "[\\w\\W\\d]+";
-    private static final String datePattern = "[\\d]{4}-[\\d]{2}-[\\d]{2}";
-
 
     private Pattern patternMatching = null;
     private Matcher matcher = null;
@@ -49,7 +41,7 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
     public Hospital deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         JsonNode hospitalNode = jsonParser.getCodec().readTree(jsonParser);
         this.validateJSON(hospitalNode);
-        if(shutDown) {
+        if (shutDown) {
             System.exit(1);
         }
         return buildHospital(hospitalNode);
@@ -68,16 +60,16 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
                     .setId(Long.valueOf(patientNode.get("id").asInt()))
                     .setName(patientNode.get("name").asText())
                     .setSurName(patientNode.get("surName").asText())
-                    .setBirthDay(parser.parseDateTime(patientNode.get("birthDay").asText()))
+                    .setBirthDay(Utils.PARSER.parseDateTime(patientNode.get("birthDay").asText()))
                     .setAddress(patientNode.get("address").asText())
                     .build();
 
             Iterators.forEachRemaining(patientNode.get("diagnosesList").iterator(), (diagnosesNode) -> { //fill diagnoses list
                 newDiagnosis = Diagnosis.create()
-                        .setDate(parser.parseDateTime(diagnosesNode.get("date").asText()))
+                        .setDate(Utils.PARSER.parseDateTime(diagnosesNode.get("date").asText()))
                         .setSummary(diagnosesNode.get("summary").asText())
                         .build();
-                patientService.addDiagnosis(newPatient, newDiagnosis);
+                Utils.PATIENT_SERVICE.addDiagnosis(newPatient, newDiagnosis);
             });
 
             newHospital.addPatient(newPatient);
@@ -86,7 +78,7 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
     }
 
     /**
-     * <p>parse whole JSON document and validate field values. If found some error, write it to resultValidation</p>
+     * <p>parse whole JSON document and validate field values. If found some error</p>
      *
      * @param hospitalNode root node of JSON document
      */
@@ -94,20 +86,20 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         Iterators.forEachRemaining(hospitalNode.getFields(), (json) -> {
 
             if (!json.getValue().isContainerNode()) {
-                this.validate("hospital",json.getKey(), json.getValue().asText(), getPatternForNode(json.getKey()));
+                this.validate(json, "hospital", json.getKey(), json.getValue().asText(), getPatternForNode(json.getKey()));
             } else {
 
                 Iterators.forEachRemaining(json.getValue().iterator(), (jsonArray) -> {
                     Iterators.forEachRemaining(jsonArray.getFields(), (patientNode) -> {
 
                         if (!patientNode.getValue().isContainerNode()) {
-                            this.validate("patient",patientNode.getKey(), patientNode.getValue().asText(), getPatternForNode(patientNode.getKey()));
+                            this.validate(patientNode, "patient", patientNode.getKey(), patientNode.getValue().asText(), getPatternForNode(patientNode.getKey()));
                         } else {
 
                             Iterators.forEachRemaining(patientNode.getValue().iterator(), (patientArray) -> {
                                 Iterators.forEachRemaining(patientArray.getFields(), (diagnosisNode) -> {
                                     if (!diagnosisNode.getValue().isContainerNode()) {
-                                        this.validate("diagnosis",diagnosisNode.getKey(), diagnosisNode.getValue().asText(), getPatternForNode(diagnosisNode.getKey()));
+                                        this.validate(diagnosisNode, "diagnosis", diagnosisNode.getKey(), diagnosisNode.getValue().asText(), getPatternForNode(diagnosisNode.getKey()));
                                     }
                                 });
                             });
@@ -121,21 +113,26 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
 
     /**
      * <p>
-     *     validate passed value: match it with pattern.
-     *     if incorrect, throw exception
+     * validate passed value: match it with @param pattern.
+     * if incorrect, throw exception
      * </p>
-     * @param key is a key of validated field
-     * @param value is validated value
+     *
+     * @param node    is current node validated by system
+     * @param key     is a key of validated field
+     * @param value   is validated value
      * @param pattern is uses by validator for matching with value
-     * @exception JSONFieldInvalidException
-     * */
-    public void validate(String node,String key, String value, String pattern) {
+     * @throws JSONFieldInvalidException validate all fields
+     */
+    public void validate(Map.Entry<String, JsonNode> node, String nodeName, String key, String value, String pattern) {
         patternMatching = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         matcher = patternMatching.matcher(value);
+        String nodeType = node.getValue().asToken().toString();
 
         if (!matcher.matches()) {
             try {
-                throw new JSONFieldInvalidException(wrapError(node,key, value));
+                throw new JSONFieldInvalidException(wrapError(nodeName,
+                        nodeType.substring(nodeType.indexOf('_') + 1, nodeType.length()),
+                        key, value));
             } catch (JSONFieldInvalidException e) {
                 e.printStackTrace();
                 this.shutDown = true;
@@ -143,39 +140,41 @@ public class JsonDeserializer extends org.codehaus.jackson.map.JsonDeserializer<
         }
     }
 
-    public String wrapError(String node,String key, String value) {
-        return "type mismatch or incorrect input in value of "+node+" {"+  key + ":"+value+"}.\n";
+    public String wrapError(String nodeName, String nodeType, String key, String value) {
+        return "Can not construct instance with node ["
+                + nodeName
+                + " { " + key + " : " + value + " }].Not a valid. \n" +
+                "Node value type " + nodeType + "\n";
     }
 
     public String getPatternForNode(String key) {
         switch (key) {
             case "id":
-                return idPattern;
+                return Utils.ID_PATTERN;
             case "title":
-                return nameSurnamePattern;
+                return Utils.NAME_SURNAME_PATTERN;
             case "name":
-                return nameSurnamePattern;
+                return Utils.NAME_SURNAME_PATTERN;
             case "surName":
-                return nameSurnamePattern;
+                return Utils.NAME_SURNAME_PATTERN;
             case "address":
-                return addressPattern;
+                return Utils.ADDRESS_PATTERN;
             case "birthDay":
-                return datePattern;
+                return Utils.DATE_PATTERN;
             case "summary":
-                return summaryPattern;
+                return Utils.SUMMARY_PATTERN;
             case "date":
-                return datePattern;
+                return Utils.DATE_PATTERN;
             default:
                 return null;
 
         }
     }
 
-    class JSONFieldInvalidException extends Exception{
+
+    class JSONFieldInvalidException extends JsonMappingException {
         public JSONFieldInvalidException(String message) {
             super(message);
         }
-
     }
-
 }

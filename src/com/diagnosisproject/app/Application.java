@@ -9,6 +9,7 @@ import com.diagnosisproject.services.PatientServiceImpl;
 import com.diagnosisproject.entities.Diagnosis;
 import com.diagnosisproject.entities.Hospital;
 import com.diagnosisproject.entities.Patient;
+import com.diagnosisproject.utils.Utils;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -21,11 +22,10 @@ import java.text.ParseException;
  * Created by pkuz'tc on 3/29/2016.
  */
 public class Application {
-    public static final String format = "dd-MM-yyyy";
-    public static final DateTimeFormatter parser = DateTimeFormat.forPattern(format);
-    public static final String date1 = "10-11-2014";
-    public static final String date2 = "10-12-2015";
-    public static final String date3 = "11-12-2015";
+
+    public static final String date1 = "2014-10-11";
+    public static final String date2 = "2015-10-12";
+    public static final String date3 = "2015-11-12";
     public static final String xmlFilename = "result.xml";
     public static final String jsonFilename = "result.json";
     public static final String textFilename = "result.txt";
@@ -46,10 +46,10 @@ public class Application {
         Application.removeFileIfExist(textFilename);
         Patient patientPavel = Patient.create()
                 .setId(Long.valueOf("1"))
-                .setName("Pavel21312")
+                .setName("Pavel")
                 .setSurName("Lol")
                 .setAddress("Chernivci")
-                .setBirthDay(parser.parseDateTime(date1))
+                .setBirthDay(Utils.PARSER.parseDateTime(date1))
                 .build();
 
         Patient patientVasia = Patient.create()
@@ -57,18 +57,18 @@ public class Application {
                 .setName("Pavel")
                 .setSurName("Lol")
                 .setAddress("Chernivci")
-                .setBirthDay(parser.parseDateTime(date1))
+                .setBirthDay(Utils.PARSER.parseDateTime(date1))
                 .build();
 
         Diagnosis diagnosis1 = Diagnosis.create()
                 .setId(Long.valueOf("10201012"))
                 .setSummary("Good")
-                .setDate(parser.parseDateTime(date2))
+                .setDate(Utils.PARSER.parseDateTime(date2))
                 .build();
         Diagnosis diagnosis2 = Diagnosis.create()
                 .setId(Long.valueOf("10201022"))
                 .setSummary("Bad")
-                .setDate(parser.parseDateTime(date3))
+                .setDate(Utils.PARSER.parseDateTime(date3))
                 .build();
         PatientService service = new PatientServiceImpl();
         service.addDiagnosis(patientPavel, diagnosis1, diagnosis2);
@@ -79,8 +79,9 @@ public class Application {
 
         IOContext<Hospital> context = new IOContext<Hospital>(new JsonIO());
 
-//        context.write(hospital,jsonFilename);
+        context.write(hospital,jsonFilename);
         hospital = context.read(jsonFilename);
+        System.out.println(hospital);
 
         context.setStrategy(new FileIO());
         context.write(hospital, textFilename);
